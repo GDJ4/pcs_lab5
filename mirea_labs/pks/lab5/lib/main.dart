@@ -1,294 +1,239 @@
 import 'package:flutter/material.dart';
-import 'edit_note_page.dart';
-import 'models/note.dart';
+import 'models.dart';
+import 'tasks_page.dart';
 
-void main() => runApp(const SimpleNotesApp());
+void main() => runApp(const PrototypeApp());
 
-class SimpleNotesApp extends StatelessWidget {
-  const SimpleNotesApp({super.key});
+class PrototypeApp extends StatelessWidget {
+  const PrototypeApp({super.key});
+
+  // Палитра
+  static const Color kBg        = Color(0xFF241E35); // <-- твой фон
+  static const Color kPanel     = Color(0xFF1A1829);
+  static const Color kPurple    = Color(0xFF5B1285);
+  static const Color kPink      = Color(0xFFFF4F8A);
+  static const Color kPinkLight = Color(0xFFFF6A9E);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Notely',
+      title: 'Prototype',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF171821),
+        colorScheme: const ColorScheme.dark(
+          primary: kPink,
+          surface: kPanel,
+          background: kBg,
+        ),
+        scaffoldBackgroundColor: kBg,
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF202231),
-          titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+          backgroundColor: kPurple,
+          centerTitle: true,
+          elevation: 0,
+          titleTextStyle: TextStyle(
+            color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700),
           iconTheme: IconThemeData(color: Colors.white),
         ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Color(0xFF2A9D8F),
-          foregroundColor: Colors.white,
+        inputDecorationTheme: InputDecorationTheme(
+          filled: false, // контур как в макете
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.white, width: 2),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.white, width: 2.2),
+          ),
+          hintStyle: const TextStyle(color: Colors.white70),
+          labelStyle: const TextStyle(color: Colors.white70),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         ),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF2F3041),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          elevation: 2,
-          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        ),
-
         textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white, fontSize: 16, height: 1.25),
         ),
       ),
-      home: const NotesPage(),
+      routes: {
+        '/':     (_) => const LoginPage(),
+        '/tasks':(_) => const TasksPage(),
+        '/add':  (_) => const AddTaskPage(),
+      },
     );
   }
 }
 
-enum SortMode { updatedDesc, createdDesc, titleAsc }
+/// ---------- Кастомная иконка блокнота (ОДНА, 3 пружины)
+class NotebookIcon extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double strokeWidth;
+  const NotebookIcon({
+    super.key,
+    this.size = 140,
+    this.color = PrototypeApp.kPink,
+    this.strokeWidth = 6,
+  });
 
-class NotesPage extends StatefulWidget {
-  const NotesPage({super.key});
   @override
-  State<NotesPage> createState() => _NotesPageState();
+  Widget build(BuildContext context) {
+    return CustomPaint(size: Size.square(size), painter: _NotebookPainter(color, strokeWidth));
+  }
+}
+class _NotebookPainter extends CustomPainter {
+  final Color color; final double w;
+  _NotebookPainter(this.color, this.w);
+
+  @override
+  void paint(Canvas c, Size s) {
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    // Одинарный блокнот
+    final rect = Rect.fromLTWH(s.width * .22, s.height * .24, s.width * .56, s.height * .56);
+    final r = RRect.fromRectAndRadius(rect, Radius.circular(s.width * .10));
+    c.drawRRect(r, p);
+
+    // 3 пружины
+    final top = r.outerRect.top;
+    final left = r.outerRect.left;
+    final step = r.outerRect.width / 4; // 3 кольца
+    for (int i = 0; i < 3; i++) {
+      final x = left + step * (i + .7);
+      c.drawCircle(Offset(x, top - s.height * .06), w / 1.6, p);
+      c.drawLine(Offset(x, top - s.height * .03), Offset(x, top + s.height * .03), p);
+    }
+
+    // Линии-текст
+    final startX = left + s.width * .06;
+    final endX   = left + r.outerRect.width - s.width * .06;
+    double y = r.outerRect.top + s.height * .12;
+    for (int i = 0; i < 4; i++) {
+      c.drawLine(Offset(startX, y), Offset(endX, y), p);
+      y += s.height * .11;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
 }
 
-class _NotesPageState extends State<NotesPage> {
-  final List<Note> _notes = [
-    Note(id: '1', title: 'Пример', body: 'Это пример заметки. Нажмите на меня, чтобы отредактировать.', isPinned: true),
-  ];
+/// ---------- Экран входа
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
 
-  String _searchQuery = '';
-  bool _isSearching = false;
-  bool _grid = true;
-  SortMode _sort = SortMode.updatedDesc;
-  final TextEditingController _searchController = TextEditingController();
+  @override
+  Widget build(BuildContext context) {
+    const pink = PrototypeApp.kPink;
+    const pinkLight = PrototypeApp.kPinkLight;
 
-  List<Note> get _visibleNotes {
-    final q = _searchQuery.trim().toLowerCase();
-    List<Note> filtered = _notes.where((n) {
-      if (q.isEmpty) return true;
-      return n.title.toLowerCase().contains(q) || n.body.toLowerCase().contains(q);
-    }).toList();
-
-    // sort
-    int cmp(Note a, Note b) {
-      switch (_sort) {
-        case SortMode.updatedDesc:
-          return b.updatedAt.compareTo(a.updatedAt);
-        case SortMode.createdDesc:
-          return b.createdAt.compareTo(a.createdAt);
-        case SortMode.titleAsc:
-          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
-      }
-    }
-
-    filtered.sort(cmp);
-
-    // pinned first
-    final pinned = filtered.where((n) => n.isPinned).toList();
-    final regular = filtered.where((n) => !n.isPinned).toList();
-    return [...pinned, ...regular];
-  }
-
-  Future<void> _addNote() async {
-    final newNote = await Navigator.push<Note>(
-      context,
-      MaterialPageRoute(builder: (_) => const EditNotePage()),
-    );
-    if (newNote != null && mounted) {
-      setState(() => _notes.add(newNote));
-    }
-  }
-
-  Future<void> _edit(Note note) async {
-    final updated = await Navigator.push<Note>(
-      context,
-      MaterialPageRoute(builder: (_) => EditNotePage(existing: note)),
-    );
-    if (updated != null && mounted) {
-      setState(() {
-        final i = _notes.indexWhere((n) => n.id == updated.id);
-        if (i != -1) {
-          _notes[i] = updated.copyWith(updatedAt: DateTime.now());
-        }
-      });
-    }
-  }
-
-  void _delete(Note note) {
-    final index = _notes.indexOf(note);
-    setState(() => _notes.removeAt(index));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Заметка удалена', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.red.shade700,
-        action: SnackBarAction(
-          label: 'Отменить',
-          textColor: Colors.white,
-          onPressed: () {
-            if (mounted) {
-              setState(() => _notes.insert(index, note));
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  void _toggleSearch() {
-    setState(() {
-      _isSearching = !_isSearching;
-      if (!_isSearching) {
-        _searchQuery = '';
-        _searchController.clear();
-      }
-    });
-  }
-
-  void _onSearchChanged(String value) => setState(() => _searchQuery = value);
-
-  PopupMenuButton _sortMenu() {
-    return PopupMenuButton<SortMode>(
-      icon: const Icon(Icons.sort),
-      onSelected: (m) => setState(() => _sort = m),
-      itemBuilder: (context) => [
-        CheckedPopupMenuItem(
-          value: SortMode.updatedDesc,
-          checked: _sort == SortMode.updatedDesc,
-          child: const Text('По дате изменения (новые сверху)'),
-        ),
-        CheckedPopupMenuItem(
-          value: SortMode.createdDesc,
-          checked: _sort == SortMode.createdDesc,
-          child: const Text('По дате создания (новые сверху)'),
-        ),
-        CheckedPopupMenuItem(
-          value: SortMode.titleAsc,
-          checked: _sort == SortMode.titleAsc,
-          child: const Text('По заголовку (A→Я)'),
-        ),
-      ],
-    );
-  }
-
-  Widget _noteTile(Note n) {
-    final meta = Text(
-      'созд. ${_fmt(n.createdAt)}  •  изм. ${_fmt(n.updatedAt)}',
-      style: const TextStyle(color: Colors.white60, fontSize: 12),
-    );
-
-    return Card(
-      color: Color(n.color),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => _edit(n),
+    return Scaffold(
+      body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      n.title.isEmpty ? '(без названия)' : n.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 520),
+            padding: const EdgeInsets.fromLTRB(32, 36, 32, 28),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.02),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: pink, width: 2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const NotebookIcon(),
+                const SizedBox(height: 28),
+                const Text(
+                  'Добро пожаловать!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 26),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 260),
+                  child: SizedBox(
+                    width: double.infinity, height: 56,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [pink, pinkLight],
+                          begin: Alignment.topLeft, end: Alignment.bottomRight),
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      child: TextButton(
+                        onPressed: () => Navigator.pushReplacementNamed(context, '/tasks'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                        ),
+                        child: const Text('Войти', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                      ),
                     ),
                   ),
-                  if (n.isPinned) const Icon(Icons.push_pin, size: 18, color: Colors.white70),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.white, size: 20),
-                    onPressed: () => _delete(n),
-                    tooltip: 'Удалить',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                n.body,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 10),
-              meta,
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  String _fmt(DateTime dt) {
-    // simple local format: DD.MM HH:MM
-    final two = (int v) => v < 10 ? '0$v' : '$v';
-    return '${two(dt.day)}.${two(dt.month)}  ${two(dt.hour)}:${two(dt.minute)}';
-    // (даты/локализацию можно расширить через intl, но без пакетов сохраняем просто)
+/// ---------- Экран добавления задачи
+class AddTaskPage extends StatefulWidget {
+  const AddTaskPage({super.key});
+  @override
+  State<AddTaskPage> createState() => _AddTaskPageState();
+}
+class _AddTaskPageState extends State<AddTaskPage> {
+  final _ctrl = TextEditingController();
+
+  void _submit() {
+    final t = _ctrl.text.trim();
+    if (t.isEmpty) return;
+    Navigator.pop(context, Task(id: DateTime.now().microsecondsSinceEpoch.toString(), title: t));
   }
 
   @override
   Widget build(BuildContext context) {
-    final notes = _visibleNotes;
-
     return Scaffold(
-      appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Поиск в заголовке и тексте…',
-                  hintStyle: TextStyle(color: Colors.white70),
-                  border: InputBorder.none,
-                ),
-                autofocus: true,
-                onChanged: _onSearchChanged,
-              )
-            : const Text('Notely'),
-        actions: [
-          IconButton(
-            tooltip: _grid ? 'Режим списка' : 'Режим плитки',
-            icon: Icon(_grid ? Icons.view_agenda_outlined : Icons.grid_view_rounded),
-            onPressed: () => setState(() => _grid = !_grid),
+      appBar: AppBar(title: const Text('Новая задача')), // <-- без const у AppBar
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
+            child: TextField(
+              controller: _ctrl,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Текст', hintText: 'Введите описание задачи…'),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submit(),
+            ),
           ),
-          _sortMenu(),
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            onPressed: _toggleSearch,
+          Positioned(
+            right: 24, bottom: 24,
+            child: OutlinedButton(
+              onPressed: _submit,
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white, width: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                foregroundColor: Colors.white,
+                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              child: const Text('Готово'),
+            ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addNote,
-        child: const Icon(Icons.add),
-      ),
-      body: notes.isEmpty
-          ? const Center(
-              child: Text(
-                'Нет заметок. Нажмите +',
-                style: TextStyle(color: Colors.white70),
-              ),
-            )
-          : _grid
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: GridView.builder(
-                    itemCount: notes.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: 0.78,
-                    ),
-                    itemBuilder: (_, i) => _noteTile(notes[i]),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: notes.length,
-                  itemBuilder: (_, i) => _noteTile(notes[i]),
-                ),
     );
   }
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 }
