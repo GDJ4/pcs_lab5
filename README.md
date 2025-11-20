@@ -5,7 +5,6 @@
 
 ### Цели ПЗ
 
-* Отрисовать интерфейс **один в один** по макету (PDF).
 * Закрепить работу со **страницами/навигацией** (`Navigator.push / pop / pushNamed`).
 * Научиться строить списки через **`ListView.builder`**.
 * Реализовать добавление элементов и простое состояние без БД.
@@ -45,41 +44,8 @@ lib/
 
 ---
 
-## Запуск
 
-```bash
-flutter pub get
-flutter run
-```
 
-### Сборка APK (release)
-
-```bash
-flutter build apk --release
-# apk: build/app/outputs/flutter-apk/app-release.apk
-```
-
----
-
-## Ключевые экраны
-
-### 1) Вход
-
-* Карточка с **розовой рамкой** и **скруглениями**.
-* Кастомная иконка **NotebookIcon** (одинарный блокнот с 3 пружинами).
-* Кнопка **«Войти»**: градиент `pink → pinkLight`, скругление 28.
-
-### 2) Список «Задачи»
-
-* Тёмный фон `#241E35`, AppBar фиолетовый, заголовок по центру.
-* **CircleCheckbox** слева от текста.
-* Отступы/межстрочные как в макете.
-* FAB — **квадрат** 64×64, скругление 16, плюс по центру.
-
-### 3) «Новая задача»
-
-* Поле **с белым контуром** (толщина 2), скругление 16.
-* Кнопка **«Готово»** — `OutlinedButton` (белый контур, скругление 16), закреплена справа снизу.
 
 <img width="449" height="887" alt="2025-11-07_00-33-08" src="https://github.com/user-attachments/assets/cead2163-4cb8-463a-8989-ee20e203a172" /><img width="404" height="880" alt="2025-11-07_00-33-18" src="https://github.com/user-attachments/assets/171bb82c-43b7-4d9f-96d6-9c8e6dcfeaef" />
 <img width="443" height="888" alt="2025-11-07_00-33-24" src="https://github.com/user-attachments/assets/7b36603a-9b31-41ad-aa94-dca5cb081459" /><img width="482" height="906" alt="2025-11-07_00-33-29" src="https://github.com/user-attachments/assets/d2e0bb2a-a244-4dce-b64a-aaa77bebb8ac" />
