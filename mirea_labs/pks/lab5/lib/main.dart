@@ -8,7 +8,7 @@ class PrototypeApp extends StatelessWidget {
   const PrototypeApp({super.key});
 
   // Палитра
-  static const Color kBg        = Color(0xFF241E35); // <-- твой фон
+  static const Color kBg        = Color(0xFF241E35);
   static const Color kPanel     = Color(0xFF1A1829);
   static const Color kPurple    = Color(0xFF5B1285);
   static const Color kPink      = Color(0xFFFF4F8A);
